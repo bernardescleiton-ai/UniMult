@@ -5,7 +5,6 @@ import com.example.domain.model.AccountInfo
 import com.example.domain.model.Category
 import com.example.domain.model.EpisodeItem
 import com.example.domain.model.LiveChannel
-import com.example.domain.model.MatchGuideItem
 import com.example.domain.model.SeriesItem
 import com.example.domain.model.ServerProfile
 import com.example.domain.model.VodItem
@@ -32,6 +31,34 @@ class ContentRepository(
   private val seriesCache = mutableMapOf<String, List<SeriesItem>>()
   private val seriesCategoriesCache = mutableMapOf<String, List<Category>>()
 
+  // Reactive StateFlows observed by the UI
+  private val _liveChannels = MutableStateFlow<List<LiveChannel>>(emptyList())
+  val liveChannels: StateFlow<List<LiveChannel>> = _liveChannels.asStateFlow()
+
+  private val _liveCategories = MutableStateFlow<List<Category>>(emptyList())
+  val liveCategories: StateFlow<List<Category>> = _liveCategories.asStateFlow()
+
+  private val _vodMovies = MutableStateFlow<List<VodItem>>(emptyList())
+  val vodMovies: StateFlow<List<VodItem>> = _vodMovies.asStateFlow()
+
+  private val _vodCategories = MutableStateFlow<List<Category>>(emptyList())
+  val vodCategories: StateFlow<List<Category>> = _vodCategories.asStateFlow()
+
+  private val _series = MutableStateFlow<List<SeriesItem>>(emptyList())
+  val series: StateFlow<List<SeriesItem>> = _series.asStateFlow()
+
+  private val _seriesCategories = MutableStateFlow<List<Category>>(emptyList())
+  val seriesCategories: StateFlow<List<Category>> = _seriesCategories.asStateFlow()
+
+  private val _kidsContent = MutableStateFlow<List<VodItem>>(emptyList())
+  val kidsContent: StateFlow<List<VodItem>> = _kidsContent.asStateFlow()
+
+  private val _animeContent = MutableStateFlow<List<VodItem>>(emptyList())
+  val animeContent: StateFlow<List<VodItem>> = _animeContent.asStateFlow()
+
+  private val _sportsChannels = MutableStateFlow<List<LiveChannel>>(emptyList())
+  val sportsChannels: StateFlow<List<LiveChannel>> = _sportsChannels.asStateFlow()
+
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -47,6 +74,12 @@ class ContentRepository(
       currentServerId = newServer?.id
       _errorMessage.value = null
       _accountInfo.value = null
+      if (newServer == null) {
+        publishEmptyContent()
+      } else {
+        // If cached for this server, publish cached first
+        publishFromCache(newServer.id)
+      }
     }
 
     if (newServer != null) {
@@ -62,7 +95,8 @@ class ContentRepository(
     if (authResult.isSuccess) {
       _accountInfo.value = authResult.getOrThrow()
     } else {
-      _errorMessage.value = authResult.exceptionOrNull()?.message ?: "Falha ao autenticar no servidor."
+      val err = authResult.exceptionOrNull()?.message ?: "Falha ao autenticar no servidor."
+      _errorMessage.value = err
       _isLoading.value = false
       return
     }
@@ -97,7 +131,78 @@ class ContentRepository(
       seriesCache[server.id] = seriesStreamsRes.getOrThrow()
     }
 
+    // Publish all contents reactively to StateFlows
+    publishFromCache(server.id)
     _isLoading.value = false
+  }
+
+  private fun publishFromCache(serverId: String) {
+    val live = liveChannelsCache[serverId] ?: emptyList()
+    val liveCats = liveCategoriesCache[serverId] ?: emptyList()
+    val vod = vodMoviesCache[serverId] ?: emptyList()
+    val vodCats = vodCategoriesCache[serverId] ?: emptyList()
+    val ser = seriesCache[serverId] ?: emptyList()
+    val serCats = seriesCategoriesCache[serverId] ?: emptyList()
+
+    _liveChannels.value = live
+    _liveCategories.value = liveCats
+    _vodMovies.value = vod
+    _vodCategories.value = vodCats
+    _series.value = ser
+    _seriesCategories.value = serCats
+
+    // Filter Kids
+    val kidsCats = vodCats.filter {
+      it.name.contains("kid", ignoreCase = true) ||
+      it.name.contains("infantil", ignoreCase = true) ||
+      it.name.contains("desenho", ignoreCase = true)
+    }.map { it.id }.toSet()
+    _kidsContent.value = vod.filter {
+      kidsCats.contains(it.categoryId) ||
+      it.name.contains("kid", ignoreCase = true) ||
+      it.name.contains("infantil", ignoreCase = true) ||
+      it.genre?.contains("infantil", ignoreCase = true) == true
+    }
+
+    // Filter Anime
+    val animeCats = vodCats.filter {
+      it.name.contains("anime", ignoreCase = true) ||
+      it.name.contains("animação", ignoreCase = true) ||
+      it.name.contains("animacao", ignoreCase = true)
+    }.map { it.id }.toSet()
+    _animeContent.value = vod.filter {
+      animeCats.contains(it.categoryId) ||
+      it.name.contains("anime", ignoreCase = true) ||
+      it.genre?.contains("anime", ignoreCase = true) == true
+    }
+
+    // Filter Sports
+    val sportsCats = liveCats.filter {
+      it.name.contains("esporte", ignoreCase = true) ||
+      it.name.contains("sport", ignoreCase = true) ||
+      it.name.contains("futebol", ignoreCase = true) ||
+      it.name.contains("premiere", ignoreCase = true)
+    }.map { it.id }.toSet()
+    _sportsChannels.value = live.filter {
+      sportsCats.contains(it.categoryId) ||
+      it.name.contains("sport", ignoreCase = true) ||
+      it.name.contains("espn", ignoreCase = true) ||
+      it.name.contains("premiere", ignoreCase = true) ||
+      it.name.contains("combate", ignoreCase = true) ||
+      it.name.contains("futebol", ignoreCase = true)
+    }
+  }
+
+  private fun publishEmptyContent() {
+    _liveChannels.value = emptyList()
+    _liveCategories.value = emptyList()
+    _vodMovies.value = emptyList()
+    _vodCategories.value = emptyList()
+    _series.value = emptyList()
+    _seriesCategories.value = emptyList()
+    _kidsContent.value = emptyList()
+    _animeContent.value = emptyList()
+    _sportsChannels.value = emptyList()
   }
 
   fun getLiveChannels(serverId: String?): List<LiveChannel> {
@@ -140,56 +245,11 @@ class ContentRepository(
     return seriesCategoriesCache[serverId] ?: emptyList()
   }
 
-  fun getKidsContent(serverId: String?): List<VodItem> {
-    if (serverId == null) return emptyList()
-    val allVod = vodMoviesCache[serverId] ?: emptyList()
-    val kidsCategories = (vodCategoriesCache[serverId] ?: emptyList())
-      .filter { it.name.contains("kid", ignoreCase = true) || it.name.contains("infantil", ignoreCase = true) || it.name.contains("desenho", ignoreCase = true) }
-      .map { it.id }
-      .toSet()
+  fun getKidsContent(serverId: String?): List<VodItem> = _kidsContent.value
 
-    val filtered = allVod.filter {
-      kidsCategories.contains(it.categoryId) ||
-        it.name.contains("kid", ignoreCase = true) ||
-        it.name.contains("infantil", ignoreCase = true) ||
-        it.genre?.contains("infantil", ignoreCase = true) == true
-    }
-    return filtered
-  }
+  fun getAnimeContent(serverId: String?): List<VodItem> = _animeContent.value
 
-  fun getAnimeContent(serverId: String?): List<VodItem> {
-    if (serverId == null) return emptyList()
-    val allVod = vodMoviesCache[serverId] ?: emptyList()
-    val animeCategories = (vodCategoriesCache[serverId] ?: emptyList())
-      .filter { it.name.contains("anime", ignoreCase = true) || it.name.contains("animação", ignoreCase = true) || it.name.contains("animacao", ignoreCase = true) }
-      .map { it.id }
-      .toSet()
-
-    val filtered = allVod.filter {
-      animeCategories.contains(it.categoryId) ||
-        it.name.contains("anime", ignoreCase = true) ||
-        it.genre?.contains("anime", ignoreCase = true) == true
-    }
-    return filtered
-  }
-
-  fun getSportsChannels(serverId: String?): List<LiveChannel> {
-    if (serverId == null) return emptyList()
-    val allChannels = liveChannelsCache[serverId] ?: emptyList()
-    val sportsCategories = (liveCategoriesCache[serverId] ?: emptyList())
-      .filter { it.name.contains("esporte", ignoreCase = true) || it.name.contains("sport", ignoreCase = true) || it.name.contains("futebol", ignoreCase = true) || it.name.contains("premiere", ignoreCase = true) }
-      .map { it.id }
-      .toSet()
-
-    return allChannels.filter {
-      sportsCategories.contains(it.categoryId) ||
-        it.name.contains("sport", ignoreCase = true) ||
-        it.name.contains("espn", ignoreCase = true) ||
-        it.name.contains("premiere", ignoreCase = true) ||
-        it.name.contains("combate", ignoreCase = true) ||
-        it.name.contains("futebol", ignoreCase = true)
-    }
-  }
+  fun getSportsChannels(serverId: String?): List<LiveChannel> = _sportsChannels.value
 
   suspend fun getSeriesEpisodes(server: ServerProfile?, seriesId: String): List<EpisodeItem> {
     if (server == null) return emptyList()
@@ -204,5 +264,8 @@ class ContentRepository(
     vodCategoriesCache.remove(serverId)
     seriesCache.remove(serverId)
     seriesCategoriesCache.remove(serverId)
+    if (currentServerId == serverId) {
+      publishEmptyContent()
+    }
   }
 }

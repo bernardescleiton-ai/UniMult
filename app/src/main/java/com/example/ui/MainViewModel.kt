@@ -11,7 +11,6 @@ import com.example.data.repository.ServerRepository
 import com.example.domain.model.AccountInfo
 import com.example.domain.model.Category
 import com.example.domain.model.LiveChannel
-import com.example.domain.model.MatchGuideItem
 import com.example.domain.model.SeriesItem
 import com.example.domain.model.ServerProfile
 import com.example.domain.model.VodItem
@@ -54,6 +53,17 @@ class MainViewModel(
   val isLoading: StateFlow<Boolean> = contentRepository.isLoading
   val errorMessage: StateFlow<String?> = contentRepository.errorMessage
   val accountInfo: StateFlow<AccountInfo?> = contentRepository.accountInfo
+
+  // Reactive StateFlows from ContentRepository
+  val liveChannels: StateFlow<List<LiveChannel>> = contentRepository.liveChannels
+  val liveCategories: StateFlow<List<Category>> = contentRepository.liveCategories
+  val vodMovies: StateFlow<List<VodItem>> = contentRepository.vodMovies
+  val vodCategories: StateFlow<List<Category>> = contentRepository.vodCategories
+  val series: StateFlow<List<SeriesItem>> = contentRepository.series
+  val seriesCategories: StateFlow<List<Category>> = contentRepository.seriesCategories
+  val kidsContent: StateFlow<List<VodItem>> = contentRepository.kidsContent
+  val animeContent: StateFlow<List<VodItem>> = contentRepository.animeContent
+  val sportsChannels: StateFlow<List<LiveChannel>> = contentRepository.sportsChannels
 
   private val _historyList = MutableStateFlow<List<HistoryEntity>>(emptyList())
   val historyList: StateFlow<List<HistoryEntity>> = _historyList.asStateFlow()
@@ -136,16 +146,6 @@ class MainViewModel(
       }
     }
   }
-
-  fun getLiveChannels(): List<LiveChannel> = contentRepository.getLiveChannels(activeServer.value?.id)
-  fun getLiveCategories(): List<Category> = contentRepository.getLiveCategories(activeServer.value?.id)
-  fun getMovies(categoryId: String? = null): List<VodItem> = contentRepository.getVodMovies(activeServer.value?.id, categoryId)
-  fun getVodCategories(): List<Category> = contentRepository.getVodCategories(activeServer.value?.id)
-  fun getSeries(categoryId: String? = null): List<SeriesItem> = contentRepository.getSeries(activeServer.value?.id, categoryId)
-  fun getSeriesCategories(): List<Category> = contentRepository.getSeriesCategories(activeServer.value?.id)
-  fun getKids(): List<VodItem> = contentRepository.getKidsContent(activeServer.value?.id)
-  fun getAnime(): List<VodItem> = contentRepository.getAnimeContent(activeServer.value?.id)
-  fun getSportsChannels(): List<LiveChannel> = contentRepository.getSportsChannels(activeServer.value?.id)
 
   fun reloadContent() {
     activeServer.value?.let { server ->

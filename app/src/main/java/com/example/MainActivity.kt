@@ -13,13 +13,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.local.AppDatabase
 import com.example.data.remote.XtreamCodesClient
 import com.example.data.repository.ContentRepository
@@ -107,6 +103,17 @@ fun UniMultApp(
   val activePlayback by mainViewModel.activePlayback.collectAsState()
   val isLoading by mainViewModel.isLoading.collectAsState()
   val accountInfo by mainViewModel.accountInfo.collectAsState()
+
+  // Reactive catalogs loaded from active server
+  val liveChannels by mainViewModel.liveChannels.collectAsState()
+  val liveCategories by mainViewModel.liveCategories.collectAsState()
+  val vodMovies by mainViewModel.vodMovies.collectAsState()
+  val vodCategories by mainViewModel.vodCategories.collectAsState()
+  val series by mainViewModel.series.collectAsState()
+  val seriesCategories by mainViewModel.seriesCategories.collectAsState()
+  val kidsContent by mainViewModel.kidsContent.collectAsState()
+  val animeContent by mainViewModel.animeContent.collectAsState()
+  val sportsChannels by mainViewModel.sportsChannels.collectAsState()
 
   val historyList by mainViewModel.historyList.collectAsState()
   val favoritesList by mainViewModel.favoritesList.collectAsState()
@@ -248,8 +255,8 @@ fun UniMultApp(
                 serverName = activeServer?.name ?: "Padrão / Demonstração",
                 onClearHistory = { mainViewModel.clearHistory() },
                 onItemClick = { streamId, title ->
-                  val movie = mainViewModel.getMovies().firstOrNull { it.streamId == streamId }
-                  val ch = mainViewModel.getLiveChannels().firstOrNull { it.streamId == streamId }
+                  val movie = vodMovies.firstOrNull { it.streamId == streamId }
+                  val ch = liveChannels.firstOrNull { it.streamId == streamId }
                   val streamUrl = movie?.streamUrl ?: ch?.streamUrl ?: ""
                   if (streamUrl.isNotBlank()) {
                     mainViewModel.startPlayback(
@@ -273,7 +280,7 @@ fun UniMultApp(
                 when (section) {
                   AppNavSection.TV -> {
                     LiveTvScreen(
-                      channels = mainViewModel.getLiveChannels(),
+                      channels = liveChannels,
                       onPlayFullscreen = { ch ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -291,7 +298,7 @@ fun UniMultApp(
                   }
                   AppNavSection.JOGOS -> {
                     MatchesScreen(
-                      sportsChannels = mainViewModel.getSportsChannels(),
+                      sportsChannels = sportsChannels,
                       onChannelClick = { ch ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -309,7 +316,7 @@ fun UniMultApp(
                   }
                   AppNavSection.DESTAQUES -> {
                     HomeScreen(
-                      highlights = mainViewModel.getMovies(),
+                      highlights = vodMovies,
                       onItemClick = { vod ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -327,8 +334,8 @@ fun UniMultApp(
                   AppNavSection.FILMES -> {
                     VodScreen(
                       sectionTitle = "Filmes",
-                      items = mainViewModel.getMovies(),
-                      categories = mainViewModel.getVodCategories(),
+                      items = vodMovies,
+                      categories = vodCategories,
                       onVodClick = { vod ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -347,19 +354,18 @@ fun UniMultApp(
                     VodScreen(
                       sectionTitle = "Séries",
                       items = emptyList(),
-                      seriesItems = mainViewModel.getSeries(),
-                      categories = mainViewModel.getSeriesCategories(),
+                      seriesItems = series,
+                      categories = seriesCategories,
                       onVodClick = {},
-                      onSeriesClick = { series ->
-                        // Episode stream will be requested or played
-                        val stream = series.cover ?: ""
+                      onSeriesClick = { ser ->
+                        val stream = ser.cover ?: ""
                         mainViewModel.startPlayback(
                           ActivePlayback(
                             streamUrl = stream,
-                            title = series.name,
-                            subtitle = series.genre ?: "Série",
-                            streamId = series.seriesId,
-                            posterUrl = series.cover
+                            title = ser.name,
+                            subtitle = ser.genre ?: "Série",
+                            streamId = ser.seriesId,
+                            posterUrl = ser.cover
                           )
                         )
                       },
@@ -369,7 +375,7 @@ fun UniMultApp(
                   AppNavSection.KIDS -> {
                     VodScreen(
                       sectionTitle = "KIDS",
-                      items = mainViewModel.getKids(),
+                      items = kidsContent,
                       onVodClick = { vod ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -387,7 +393,7 @@ fun UniMultApp(
                   AppNavSection.ANIME -> {
                     VodScreen(
                       sectionTitle = "ANIME",
-                      items = mainViewModel.getAnime(),
+                      items = animeContent,
                       onVodClick = { vod ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -404,7 +410,7 @@ fun UniMultApp(
                   }
                   AppNavSection.EXPLORAR -> {
                     ExploreScreen(
-                      allItems = mainViewModel.getMovies(),
+                      allItems = vodMovies,
                       onVodClick = { vod ->
                         mainViewModel.startPlayback(
                           ActivePlayback(
@@ -436,8 +442,13 @@ fun UniMultApp(
                           username = user,
                           password = pass,
                           makeActive = makeActive,
-                          onSuccess = { serversViewModel.resetTestStatus() }
+                          onSuccess = {
+                            serversViewModel.resetTestStatus()
+                          }
                         )
+                      },
+                      onNavigateToContent = {
+                        mainViewModel.setSection(AppNavSection.DESTAQUES)
                       }
                     )
                   }
@@ -452,8 +463,8 @@ fun UniMultApp(
     // Quick Search Modal Dialog
     if (showSearchModal) {
       SearchModalDialog(
-        allMovies = mainViewModel.getMovies(),
-        allChannels = mainViewModel.getLiveChannels(),
+        allMovies = vodMovies,
+        allChannels = liveChannels,
         onSelectMovie = { movie ->
           showSearchModal = false
           mainViewModel.startPlayback(
