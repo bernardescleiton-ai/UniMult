@@ -37,18 +37,16 @@ jobs:
         echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
-    - name: Grant execute permission for gradlew
+    - name: Download Gradle
       run: |
-        gradle wrapper --gradle-version 8.5 || true
-        chmod +x gradlew || true
+        wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip -O gradle.zip
+        unzip -q gradle.zip -d $HOME
+        echo "$HOME/gradle-8.5/bin" >> $GITHUB_PATH
 
     - name: Build Debug APK with Gradle
       run: |
-        if [ -f "./gradlew" ]; then
-          ./gradlew assembleDebug --no-daemon
-        else
-          gradle assembleDebug --no-daemon
-        fi
+        gradle wrapper --gradle-version 8.5
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
