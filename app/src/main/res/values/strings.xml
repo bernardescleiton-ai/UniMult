@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">UniMult</string>
+    <string name="title_servers">Servidores</string>
+    <string name="title_live_tv">TV</string>
+    <string name="title_matches">JOGOS</string>
+    <string name="title_highlights">DESTAQUES</string>
+    <string name="title_movies">FILMES</string>
+    <string name="title_series">SÉRIES</string>
+    <string name="title_kids">KIDS</string>
+    <string name="title_anime">ANIME</string>
+    <string name="title_explore">EXPLORAR</string>
+</resources>
