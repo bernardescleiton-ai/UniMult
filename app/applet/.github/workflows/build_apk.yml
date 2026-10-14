@@ -19,26 +19,8 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Install Android SDK
-      run: |
-        SDK_ROOT=$HOME/android-sdk
-        echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> $GITHUB_ENV
-        echo "ANDROID_HOME=$SDK_ROOT" >> $GITHUB_ENV
-        mkdir -p $SDK_ROOT
-        
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-        mkdir -p $SDK_ROOT/cmdline-tools/latest
-        unzip -q cmdtools.zip -d $SDK_ROOT/cmdline-tools
-        mv $SDK_ROOT/cmdline-tools/cmdline-tools/* $SDK_ROOT/cmdline-tools/latest/
-        rm -rf $SDK_ROOT/cmdline-tools/cmdline-tools cmdtools.zip
-        
-        export PATH=$PATH:$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools
-        yes | sdkmanager --licenses || true
-        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-    - name: Create local.properties
-      run: |
-        echo "sdk.dir=$HOME/android-sdk" > local.properties
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
