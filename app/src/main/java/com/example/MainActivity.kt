@@ -46,6 +46,7 @@ import com.example.ui.home.HomeScreen
 import com.example.ui.livetv.LiveTvScreen
 import com.example.ui.matches.MatchesScreen
 import com.example.ui.player.VideoPlayerScreen
+import com.example.ui.player.WebBrowserScreen
 import com.example.ui.profile.UserProfileScreen
 import com.example.ui.servers.ServersScreen
 import com.example.ui.servers.ServersViewModel
@@ -101,6 +102,7 @@ fun UniMultApp(
   val allServers by mainViewModel.allServers.collectAsState()
   val selectedSection by mainViewModel.selectedSection.collectAsState()
   val activePlayback by mainViewModel.activePlayback.collectAsState()
+  val activeWebPlayback by mainViewModel.activeWebPlayback.collectAsState()
   val isLoading by mainViewModel.isLoading.collectAsState()
   val accountInfo by mainViewModel.accountInfo.collectAsState()
 
@@ -156,6 +158,16 @@ fun UniMultApp(
       onPlaybackProgress = { pos, dur ->
         mainViewModel.updatePlaybackProgress(pos, dur)
       }
+    )
+    return
+  }
+
+  if (activeWebPlayback != null) {
+    val web = activeWebPlayback!!
+    WebBrowserScreen(
+      url = web.url,
+      title = web.title,
+      onBack = { mainViewModel.stopWebPlayback() }
     )
     return
   }
@@ -444,8 +456,22 @@ fun UniMultApp(
                           makeActive = makeActive,
                           onSuccess = {
                             serversViewModel.resetTestStatus()
+                            mainViewModel.setSection(AppNavSection.DESTAQUES)
                           }
                         )
+                      },
+                      onPlayDirectUrl = { url, title ->
+                        mainViewModel.startPlayback(
+                          ActivePlayback(
+                            streamUrl = url,
+                            title = title,
+                            subtitle = "Reprodução Direta",
+                            isLive = true
+                          )
+                        )
+                      },
+                      onOpenWebUrl = { url, title ->
+                        mainViewModel.startWebPlayback(url, title)
                       },
                       onNavigateToContent = {
                         mainViewModel.setSection(AppNavSection.DESTAQUES)

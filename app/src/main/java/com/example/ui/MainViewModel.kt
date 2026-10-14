@@ -31,6 +31,11 @@ data class ActivePlayback(
   val posterUrl: String? = null
 )
 
+data class ActiveWebPlayback(
+  val url: String,
+  val title: String
+)
+
 class MainViewModel(
   private val serverRepository: ServerRepository,
   private val contentRepository: ContentRepository,
@@ -44,11 +49,14 @@ class MainViewModel(
   val activeServer: StateFlow<ServerProfile?> = serverRepository.activeServer
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-  private val _selectedSection = MutableStateFlow(AppNavSection.DESTAQUES)
+  private val _selectedSection = MutableStateFlow(AppNavSection.SERVIDORES)
   val selectedSection: StateFlow<AppNavSection> = _selectedSection.asStateFlow()
 
   private val _activePlayback = MutableStateFlow<ActivePlayback?>(null)
   val activePlayback: StateFlow<ActivePlayback?> = _activePlayback.asStateFlow()
+
+  private val _activeWebPlayback = MutableStateFlow<ActiveWebPlayback?>(null)
+  val activeWebPlayback: StateFlow<ActiveWebPlayback?> = _activeWebPlayback.asStateFlow()
 
   val isLoading: StateFlow<Boolean> = contentRepository.isLoading
   val errorMessage: StateFlow<String?> = contentRepository.errorMessage
@@ -89,6 +97,7 @@ class MainViewModel(
         } else {
           _historyList.value = emptyList()
           _favoritesList.value = emptyList()
+          _selectedSection.value = AppNavSection.SERVIDORES
         }
       }
     }
@@ -137,6 +146,14 @@ class MainViewModel(
 
   fun stopPlayback() {
     _activePlayback.value = null
+  }
+
+  fun startWebPlayback(url: String, title: String) {
+    _activeWebPlayback.value = ActiveWebPlayback(url, title)
+  }
+
+  fun stopWebPlayback() {
+    _activeWebPlayback.value = null
   }
 
   fun clearHistory() {

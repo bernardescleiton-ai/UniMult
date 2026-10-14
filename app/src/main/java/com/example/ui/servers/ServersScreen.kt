@@ -87,6 +87,8 @@ fun ServersScreen(
   onTestServer: (ServerProfile) -> Unit,
   onDraftTest: (url: String, user: String, pass: String) -> Unit,
   onSaveServer: (id: String?, name: String, url: String, user: String, pass: String, makeActive: Boolean) -> Unit,
+  onPlayDirectUrl: (url: String, title: String) -> Unit,
+  onOpenWebUrl: (url: String, title: String) -> Unit,
   onNavigateToContent: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
@@ -161,6 +163,142 @@ fun ServersScreen(
             Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text("Cancelar Edição", fontSize = 12.sp)
+          }
+        }
+      }
+    }
+
+    // Direct URL / Web Link Playback Card
+    item {
+      var directInputUrl by remember { mutableStateOf("") }
+      var directInputTitle by remember { mutableStateOf("") }
+      var directUrlError by remember { mutableStateOf<String?>(null) }
+
+      Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+          containerColor = Color(0xFF14141F)
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, AccentGold),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+              modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(AccentGold),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+              Text(
+                text = "Reprodução Direta por URL ou Web Link",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+              )
+              Text(
+                text = "Cole qualquer link de vídeo (MP4, HLS, M3U) ou página web",
+                color = AccentGold,
+                fontSize = 11.sp
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(14.dp))
+
+          OutlinedTextField(
+            value = directInputTitle,
+            onValueChange = { directInputTitle = it },
+            placeholder = { Text("Título / Nome (Opcional)") },
+            colors = getVisibleTextFieldColors(),
+            shape = RoundedCornerShape(10.dp),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          Spacer(modifier = Modifier.height(8.dp))
+
+          OutlinedTextField(
+            value = directInputUrl,
+            onValueChange = {
+              directInputUrl = it
+              directUrlError = null
+            },
+            placeholder = { Text("Ex: https://exemplo.com/video.mp4 ou .m3u8") },
+            leadingIcon = {
+              Icon(Icons.Default.Link, contentDescription = null, tint = AccentGold)
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            colors = getVisibleTextFieldColors(),
+            shape = RoundedCornerShape(10.dp),
+            singleLine = true,
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("direct_url_input")
+          )
+
+          if (directUrlError != null) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "⚠️ $directUrlError", color = Color(0xFFEF5350), fontSize = 12.sp)
+          }
+
+          Spacer(modifier = Modifier.height(14.dp))
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            Button(
+              onClick = {
+                var u = directInputUrl.trim()
+                if (u.isBlank()) {
+                  directUrlError = "Insira um link/URL válido."
+                } else {
+                  if (!u.startsWith("http://") && !u.startsWith("https://") && !u.startsWith("rtsp://") && !u.startsWith("rtmp://")) {
+                    u = "https://$u"
+                  }
+                  onPlayDirectUrl(u, directInputTitle.ifBlank { "Link Direto" })
+                }
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = RubyPrimary),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier
+                .weight(1f)
+                .height(46.dp)
+                .testTag("play_direct_video_button")
+            ) {
+              Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Reproduzir Vídeo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            Button(
+              onClick = {
+                var u = directInputUrl.trim()
+                if (u.isBlank()) {
+                  directUrlError = "Insira um link/URL válido."
+                } else {
+                  if (!u.startsWith("http://") && !u.startsWith("https://")) {
+                    u = "https://$u"
+                  }
+                  onOpenWebUrl(u, directInputTitle.ifBlank { "Página Web" })
+                }
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C3E50)),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier
+                .weight(1f)
+                .height(46.dp)
+                .testTag("open_web_page_button")
+            ) {
+              Icon(Icons.Default.Link, contentDescription = null, tint = AccentGold)
+              Spacer(modifier = Modifier.width(4.dp))
+              Text("Abrir Web", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
           }
         }
       }

@@ -166,27 +166,36 @@ fun TopHeaderBar(
         )
       }
 
-      // Multi-Server icon button
-      IconButton(
-        onClick = onServersClick,
-        modifier = Modifier.testTag("servers_management_button")
+      // Multi-Server button - clearly labeled so user knows exactly where to enter/manage server data
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(20.dp))
+          .background(
+            if (activeServer != null) Color(0x334CAF50) else Color(0xCCB71C1C)
+          )
+          .border(
+            width = 1.dp,
+            color = if (activeServer != null) Color(0xFF4CAF50) else AccentGold,
+            shape = RoundedCornerShape(20.dp)
+          )
+          .clickable { onServersClick() }
+          .padding(horizontal = 10.dp, vertical = 5.dp)
+          .testTag("servers_management_button"),
+        contentAlignment = Alignment.Center
       ) {
-        BadgedBox(
-          badge = {
-            if (activeServer != null) {
-              Box(
-                modifier = Modifier
-                  .size(8.dp)
-                  .clip(CircleShape)
-                  .background(Color(0xFF4CAF50))
-              )
-            }
-          }
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
           Icon(
             imageVector = Icons.Default.Dns,
-            contentDescription = "Gerenciar Servidores",
-            tint = if (activeServer != null) AccentGold else Color.White
+            contentDescription = "Servidor",
+            tint = if (activeServer != null) AccentGold else Color.White,
+            modifier = Modifier.size(15.dp)
+          )
+          Spacer(modifier = Modifier.width(5.dp))
+          Text(
+            text = if (activeServer != null) activeServer.name else "DADOS DO SERVIDOR",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp
           )
         }
       }

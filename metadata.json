@@ -1,5 +1,5 @@
 {
-  "name": "UniMult",
+  "name": "UniMult TV",
   "description": "Aplicativo Android Multi-Servidor compatível com Xtream Codes, com catálogo completo e reprodução de canais, filmes e séries.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

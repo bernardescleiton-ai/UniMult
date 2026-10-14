@@ -78,11 +78,14 @@ fun EmptyCatalogState(
         Button(
           onClick = onNavigateToServers,
           colors = ButtonDefaults.buttonColors(containerColor = RubyPrimary),
-          modifier = Modifier.testTag("empty_state_go_to_servers")
+          modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .height(48.dp)
+            .testTag("empty_state_go_to_servers")
         ) {
           Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
-          Spacer(modifier = Modifier.width(6.dp))
-          Text("Gerenciar / Adicionar Servidor", color = Color.White, fontWeight = FontWeight.Bold)
+          Spacer(modifier = Modifier.width(8.dp))
+          Text("Preencher Dados do Servidor (URL, Usuário e Senha)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
       }
     }

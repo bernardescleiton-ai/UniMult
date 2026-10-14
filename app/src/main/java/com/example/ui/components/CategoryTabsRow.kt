@@ -24,15 +24,15 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.theme.AccentGold
 
 enum class AppNavSection(val label: String) {
-  TV("TV"),
-  JOGOS("JOGOS"),
+  SERVIDORES("⚙️ SERVIDOR"),
   DESTAQUES("DESTAQUES"),
+  TV("TV"),
   FILMES("FILMES"),
   SERIES("SÉRIES"),
+  JOGOS("JOGOS"),
   KIDS("KIDS"),
   ANIME("ANIME"),
-  EXPLORAR("EXPLORAR"),
-  SERVIDORES("SERVIDORES")
+  EXPLORAR("EXPLORAR")
 }
 
 @Composable
@@ -54,15 +54,25 @@ fun CategoryTabsRow(
     AppNavSection.values().forEach { section ->
       val isSelected = section == selectedSection
 
+      val isServerTab = section == AppNavSection.SERVIDORES
+      val tabBg = when {
+        isSelected -> Color(0x33FFD54F)
+        isServerTab -> Color(0x33E50914)
+        else -> Color.Transparent
+      }
+      val tabBorderColor = when {
+        isSelected -> AccentGold
+        isServerTab -> Color(0x66FFD54F)
+        else -> Color.Transparent
+      }
+
       Box(
         modifier = Modifier
           .clip(RoundedCornerShape(20.dp))
-          .background(
-            if (isSelected) Color(0x33FFD54F) else Color.Transparent
-          )
+          .background(tabBg)
           .border(
-            width = if (isSelected) 1.5.dp else 0.dp,
-            color = if (isSelected) AccentGold else Color.Transparent,
+            width = if (isSelected || isServerTab) 1.5.dp else 0.dp,
+            color = tabBorderColor,
             shape = RoundedCornerShape(20.dp)
           )
           .clickable { onSectionSelected(section) }
